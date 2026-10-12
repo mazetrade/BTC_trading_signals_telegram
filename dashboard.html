@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Signal Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+  :root {
+    --bg:#060810;--surface:#0d1117;--border:#1a2030;
+    --green:#00ff88;--red:#ff3b5c;--yellow:#f5c542;--accent:#3d7eff;
+    --text:#e0e8f0;--muted:#4a5568;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:32px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+  .logo{font-size:22px;font-weight:800} .logo span{color:var(--green)}
+  .badge{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;color:var(--green);background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);padding:6px 14px;border-radius:100px}
+  .pulse{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 1.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+  .card-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-family:'Space Mono',monospace}
+  .card-value{font-size:30px;font-weight:800;line-height:1}
+  .green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--accent)}
+  .card-sub{font-size:11px;color:var(--muted);margin-top:6px;font-family:'Space Mono',monospace}
+  .progress-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:28px}
+  .progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .progress-title{font-size:14px;font-weight:700}
+  .progress-pct{font-family:'Space Mono',monospace;font-size:13px;color:var(--green)}
+  .bar-track{height:8px;background:var(--border);border-radius:100px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:100px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+  .milestones{display:flex;justify-content:space-between;margin-top:8px}
+  .milestone{font-size:10px;font-family:'Space Mono',monospace;color:var(--muted)}
+  .table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .table-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--border)}
+  .table-title{font-weight:700;font-size:15px}
+  .refresh-btn{font-family:'Space Mono',monospace;font-size:11px;background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
+  .refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:12px}
+  th{text-align:left;padding:12px 24px;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+  td{padding:13px 24px;border-bottom:1px solid rgba(26,32,48,.5)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .tag{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.5px}
+  .tag.buy{background:rgba(0,255,136,.12);color:var(--green)}
+  .tag.sell{background:rgba(255,59,92,.12);color:var(--red)}
+  .empty{padding:60px 24px;text-align:center;color:var(--muted);font-family:'Space Mono',monospace;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">BTC <span>Signal</span> Engine</div>
+  <div class="badge"><div class="pulse"></div> LIVE</div>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Trades Done</div>
+    <div class="card-value blue" id="count">—</div>
+    <div class="card-sub">of 66 target</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Buy Signals</div>
+    <div class="card-value green" id="buys">—</div>
+    <div class="card-sub">long entries</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Sell Signals</div>
+    <div class="card-value red" id="sells">—</div>
+    <div class="card-sub">short entries</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Last BTC Price</div>
+    <div class="card-value yellow" id="price">—</div>
+    <div class="card-sub" id="time">—</div>
+  </div>
+</div>
+<div class="progress-card">
+  <div class="progress-header">
+    <div class="progress-title">Progress to 66-trade goal</div>
+    <div class="progress-pct" id="pct">0%</div>
+  </div>
+  <div class="bar-track"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+  <div class="milestones">
+    <span class="milestone">0</span><span class="milestone">17</span>
+    <span class="milestone">33</span><span class="milestone">50</span>
+    <span class="milestone">66</span>
+  </div>
+</div>
+<div class="table-card">
+  <div class="table-header">
+    <div class="table-title">Signal History</div>
+    <button class="refresh-btn" onclick="load()">↻ Refresh</button>
+  </div>
+  <div id="body"><div class="empty">Loading…</div></div>
+</div>
+<script>
+async function load(){
+  try{
+    const r=await fetch('data/trades.json?'+Date.now());
+    if(!r.ok)throw new Error();
+    const trades=await r.json();
+    const n=trades.length,buys=trades.filter(t=>t.action==='BUY').length,
+          sells=trades.filter(t=>t.action==='SELL').length,
+          last=trades[trades.length-1],
+          pct=Math.min(Math.round(n/66*100),100);
+    document.getElementById('count').textContent=n;
+    document.getElementById('buys').textContent=buys;
+    document.getElementById('sells').textContent=sells;
+    document.getElementById('price').textContent=last?'$'+last.price.toLocaleString():'—';
+    document.getElementById('time').textContent=last?last.timestamp:'—';
+    document.getElementById('pct').textContent=pct+'%';
+    document.getElementById('bar').style.width=pct+'%';
+    const rows=[...trades].reverse().slice(0,25).map(t=>`
+      <tr>
+        <td>#${t.trade}</td>
+        <td><span class="tag ${t.action.toLowerCase()}">${t.action}</span></td>
+        <td>$${t.price.toLocaleString()}</td>
+        <td>${t.tp?'$'+t.tp.toLocaleString():'—'}</td>
+        <td>${t.sl?'$'+t.sl.toLocaleString():'—'}</td>
+        <td>${t.rsi??'—'}</td>
+        <td>${t.timestamp}</td>
+      </tr>`).join('');
+    document.getElementById('body').innerHTML=n===0
+      ?'<div class="empty">No signals yet.</div>'
+      :`<table><thead><tr><th>#</th><th>Signal</th><th>Entry</th><th>Take Profit</th><th>Stop Loss</th><th>RSI</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }catch{
+    document.getElementById('body').innerHTML='<div class="empty">No trades logged yet — engine starting up.</div>';
+  }
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# BTC Signal Engine — Python dependencies
+#
+# The engine uses only ONE third-party library: requests.
+# Everything else (json, math, time, logging, datetime, pathlib) ships with
+# the Python 3.10+ standard library.
+#
+# PythonAnywhere ships several versions of Python 3; pick one that is 3.9 or
+# newer when creating the virtualenv (the engine uses 3.10+ type-hint syntax
+# like `list[dict]` and `float | None`).
+#
+# The pinned version matches what the engine was developed and dry-run tested
+# against. Any `requests>=2.28` will also work fine.
+
+requests==2.31.0
